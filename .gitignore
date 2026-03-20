@@ -23,6 +23,7 @@ Thumbs.db
 
 # Ambiente local — NÃO versionar
 application-local.properties
+src/main/resources/application-local.properties
 
 # Manter versionados:
 # application.properties
