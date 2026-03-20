@@ -15,21 +15,16 @@ import org.springframework.stereotype.Service;
 
 import java.util.Map;
 
-/**
- * Lógica de negócio para buscar e enviar fatura.
- * Chamado pelo ResultadoApiNodeExecutor quando actionKey="buscar_fatura".
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ResultadoFaturaNodeExecutor {
 
-    private final FluxoEngine engine;
     private final WhatsAppService whatsAppService;
     private final BotTemplateService templateService;
     private final HubsoftService hubsoftService;
 
-    public void executar(FluxoExecucaoCtx ctx, FluxoNode node) {
+    public void executar(FluxoExecucaoCtx ctx, FluxoNode node, FluxoEngine engine) {
         String cpfCnpj = extrairCpf(ctx.contextData());
 
         HubsoftFaturaResponse faturas;
@@ -38,35 +33,32 @@ public class ResultadoFaturaNodeExecutor {
         } catch (Exception e) {
             log.error("Erro ao buscar faturas. CPF/CNPJ: {}", cpfCnpj, e);
             whatsAppService.enviarTexto(ctx.phone(), templateService.buscarTexto("confirma.erro"));
-            transitar(ctx, node);
+            transitar(ctx, node, engine);
             return;
         }
 
         if (faturas.faturas() == null || faturas.faturas().isEmpty()) {
             whatsAppService.enviarTexto(ctx.phone(), templateService.buscarTexto("confirma.sem_fatura"));
-            transitar(ctx, node);
+            transitar(ctx, node, engine);
             return;
         }
 
         HubsoftFaturaItem fatura = faturas.faturas().get(0);
 
         if (fatura.link() != null && !fatura.link().isBlank()) {
-            whatsAppService.enviarDocumento(
-                    ctx.phone(),
-                    fatura.link(),
+            whatsAppService.enviarDocumento(ctx.phone(), fatura.link(),
                     "boleto-" + fatura.dataVencimento() + ".pdf",
-                    "Vencimento: " + fatura.dataVencimento() + "\nLinha digitável: " + fatura.linhaDigitavel()
-            );
+                    "Vencimento: " + fatura.dataVencimento() + "\nLinha digitável: " + fatura.linhaDigitavel());
         } else {
             whatsAppService.enviarTexto(ctx.phone(),
                     templateService.buscarTexto("confirma.fatura",
                             Map.of("data", fatura.dataVencimento(), "linha", fatura.linhaDigitavel())));
         }
 
-        transitar(ctx, node);
+        transitar(ctx, node, engine);
     }
 
-    private void transitar(FluxoExecucaoCtx ctx, FluxoNode node) {
+    private void transitar(FluxoExecucaoCtx ctx, FluxoNode node, FluxoEngine engine) {
         FluxoConexao conexao = engine.encontrarConexao(node, "auto");
         if (conexao != null) engine.transicionarPara(ctx, conexao.getParaNode());
     }

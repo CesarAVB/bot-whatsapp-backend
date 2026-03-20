@@ -16,17 +16,11 @@ import org.springframework.stereotype.Component;
 
 import java.util.Map;
 
-/**
- * Handles AGUARDA_INPUT nodes para validação de CPF/CNPJ.
- * Valida o formato, consulta o Hubsoft e transita via conexão "cpf_valido".
- * O CPF e o nome do titular são armazenados no contextData (formato "cpf|nome").
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class AguardaCpfNodeExecutor implements NodeExecutor {
 
-    private final FluxoEngine engine;
     private final WhatsAppService whatsAppService;
     private final BotTemplateService templateService;
     private final HubsoftService hubsoftService;
@@ -37,7 +31,7 @@ public class AguardaCpfNodeExecutor implements NodeExecutor {
     }
 
     @Override
-    public void executar(FluxoExecucaoCtx ctx, FluxoNode node) {
+    public void executar(FluxoExecucaoCtx ctx, FluxoNode node, FluxoEngine engine) {
         String cpfCnpj = ctx.input() != null ? ctx.input().replaceAll("[^0-9]", "") : "";
 
         if (!isCpfCnpjValido(cpfCnpj)) {
@@ -60,8 +54,6 @@ public class AguardaCpfNodeExecutor implements NodeExecutor {
         }
 
         String nome = resposta.clientes().get(0).nomeRazaosocial();
-
-        // contextData: "cpf|nome" — CPF para usar no próximo nó, nome para substituir no template
         String contextData = cpfCnpj + "|" + nome;
 
         FluxoConexao conexao = engine.encontrarConexao(node, "cpf_valido");
@@ -70,8 +62,7 @@ public class AguardaCpfNodeExecutor implements NodeExecutor {
             return;
         }
 
-        engine.transicionarComContexto(ctx, conexao.getParaNode(), contextData,
-                Map.of("nome", nome));
+        engine.transicionarComContexto(ctx, conexao.getParaNode(), contextData, Map.of("nome", nome));
     }
 
     private boolean isCpfCnpjValido(String digits) {

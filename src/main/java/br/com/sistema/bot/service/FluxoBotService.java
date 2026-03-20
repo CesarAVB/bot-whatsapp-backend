@@ -138,7 +138,7 @@ public class FluxoBotService {
         return new FluxoNodeResponse(
                 n.getId().toString(), n.getLabel(), null,
                 n.getTipo(), n.getPosX(), n.getPosY(),
-                mensagens, n.getEquipeTransferencia(), n.getHorarioAtendimento());
+                mensagens, n.getEquipeTransferencia(), n.getTipoHorario());
     }
 
     private FluxoTemplateResponse resolverTemplate(FluxoMensagem m, Map<String, BotTemplate> map) {

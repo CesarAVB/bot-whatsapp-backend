@@ -46,7 +46,7 @@ public class FluxoEngine {
             FluxoNode encerrarNode = nodeRepository
                     .findFirstByTipo(TipoNode.ENCERRAMENTO)
                     .orElseThrow(() -> new IllegalStateException("Nó ENCERRAMENTO não encontrado no fluxo"));
-            executor(TipoNode.ENCERRAMENTO).executar(ctx, encerrarNode);
+            executor(TipoNode.ENCERRAMENTO).executar(ctx, encerrarNode, this);
             return;
         }
 
@@ -56,7 +56,7 @@ public class FluxoEngine {
                         .orElseThrow(() -> new IllegalStateException("Nó menu_inicial não encontrado")));
 
         log.info("Executando nó '{}' para {} | input='{}'", currentNode.getNodeKey(), ctx.phone(), ctx.input());
-        executor(currentNode.getTipo()).executar(ctx, currentNode);
+        executor(currentNode.getTipo()).executar(ctx, currentNode, this);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -79,7 +79,7 @@ public class FluxoEngine {
         stateService.setNodeKey(ctx.phone(), targetNode.getNodeKey());
 
         if (targetNode.getTipo().isAutoExecute()) {
-            executor(targetNode.getTipo()).executar(ctx, targetNode);
+            executor(targetNode.getTipo()).executar(ctx, targetNode, this);
         } else {
             enviarMensagensDoNo(ctx, targetNode, variaveis);
         }
@@ -96,7 +96,7 @@ public class FluxoEngine {
         if (targetNode.getTipo().isAutoExecute()) {
             FluxoExecucaoCtx ctxComContexto = new FluxoExecucaoCtx(
                     ctx.phone(), ctx.messageId(), ctx.senderName(), ctx.input(), contextData);
-            executor(targetNode.getTipo()).executar(ctxComContexto, targetNode);
+            executor(targetNode.getTipo()).executar(ctxComContexto, targetNode, this);
         } else {
             enviarMensagensDoNo(ctx, targetNode, variaveis);
         }

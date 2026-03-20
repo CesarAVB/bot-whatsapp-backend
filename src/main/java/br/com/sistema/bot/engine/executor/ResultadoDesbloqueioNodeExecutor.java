@@ -14,21 +14,16 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-/**
- * Lógica de negócio para executar o desbloqueio de confiança.
- * Chamado pelo ResultadoApiNodeExecutor quando actionKey="desbloquear".
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ResultadoDesbloqueioNodeExecutor {
 
-    private final FluxoEngine engine;
     private final WhatsAppService whatsAppService;
     private final BotTemplateService templateService;
     private final HubsoftService hubsoftService;
 
-    public void executar(FluxoExecucaoCtx ctx, FluxoNode node) {
+    public void executar(FluxoExecucaoCtx ctx, FluxoNode node, FluxoEngine engine) {
         String cpfCnpj = extrairCpf(ctx.contextData());
 
         HubsoftClienteResponse clienteResponse;
@@ -37,13 +32,13 @@ public class ResultadoDesbloqueioNodeExecutor {
         } catch (Exception e) {
             log.error("Erro ao buscar cliente para desbloqueio. CPF/CNPJ: {}", cpfCnpj, e);
             whatsAppService.enviarTexto(ctx.phone(), templateService.buscarTexto("confirma.erro"));
-            transitar(ctx, node);
+            transitar(ctx, node, engine);
             return;
         }
 
         if (clienteResponse.clientes() == null || clienteResponse.clientes().isEmpty()) {
             whatsAppService.enviarTexto(ctx.phone(), templateService.buscarTexto("confirma.sem_cadastro_desbloqueio"));
-            transitar(ctx, node);
+            transitar(ctx, node, engine);
             return;
         }
 
@@ -51,7 +46,7 @@ public class ResultadoDesbloqueioNodeExecutor {
 
         if (cliente.servicos() == null || cliente.servicos().isEmpty()) {
             whatsAppService.enviarTexto(ctx.phone(), templateService.buscarTexto("confirma.sem_servico"));
-            transitar(ctx, node);
+            transitar(ctx, node, engine);
             return;
         }
 
@@ -63,7 +58,7 @@ public class ResultadoDesbloqueioNodeExecutor {
         } catch (Exception e) {
             log.error("Erro ao desbloquear serviço {}", idServico, e);
             whatsAppService.enviarTexto(ctx.phone(), templateService.buscarTexto("confirma.erro"));
-            transitar(ctx, node);
+            transitar(ctx, node, engine);
             return;
         }
 
@@ -73,10 +68,10 @@ public class ResultadoDesbloqueioNodeExecutor {
             whatsAppService.enviarTexto(ctx.phone(), templateService.buscarTexto("confirma.desbloqueio_falha"));
         }
 
-        transitar(ctx, node);
+        transitar(ctx, node, engine);
     }
 
-    private void transitar(FluxoExecucaoCtx ctx, FluxoNode node) {
+    private void transitar(FluxoExecucaoCtx ctx, FluxoNode node, FluxoEngine engine) {
         FluxoConexao conexao = engine.encontrarConexao(node, "auto");
         if (conexao != null) engine.transicionarPara(ctx, conexao.getParaNode());
     }

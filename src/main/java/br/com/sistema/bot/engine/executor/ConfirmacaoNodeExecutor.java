@@ -9,19 +9,12 @@ import br.com.sistema.bot.enums.TipoNode;
 import br.com.sistema.bot.service.BotTemplateService;
 import br.com.sistema.bot.service.WhatsAppService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-/**
- * Handles CONFIRMACAO nodes (1=Sim / 2=Não).
- * Segue a conexão correspondente ou repete a pergunta em caso de input inválido.
- */
-@Slf4j
 @Component
 @RequiredArgsConstructor
 public class ConfirmacaoNodeExecutor implements NodeExecutor {
 
-    private final FluxoEngine engine;
     private final WhatsAppService whatsAppService;
     private final BotTemplateService templateService;
 
@@ -31,7 +24,7 @@ public class ConfirmacaoNodeExecutor implements NodeExecutor {
     }
 
     @Override
-    public void executar(FluxoExecucaoCtx ctx, FluxoNode node) {
+    public void executar(FluxoExecucaoCtx ctx, FluxoNode node, FluxoEngine engine) {
         String input = ctx.input() != null ? ctx.input().trim() : "";
 
         FluxoConexao conexao = engine.encontrarConexao(node, input);

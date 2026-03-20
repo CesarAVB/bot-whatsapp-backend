@@ -10,16 +10,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-/**
- * Handles ENCERRAMENTO nodes.
- * Envia a mensagem de despedida e reseta a conversa para o nó inicial.
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class EncerramentoNodeExecutor implements NodeExecutor {
 
-    private final FluxoEngine engine;
     private final ConversationStateService stateService;
 
     @Override
@@ -28,7 +23,7 @@ public class EncerramentoNodeExecutor implements NodeExecutor {
     }
 
     @Override
-    public void executar(FluxoExecucaoCtx ctx, FluxoNode node) {
+    public void executar(FluxoExecucaoCtx ctx, FluxoNode node, FluxoEngine engine) {
         engine.enviarMensagensDoNo(ctx, node);
         stateService.resetar(ctx.phone());
         log.info("Atendimento encerrado para {}", ctx.phone());
