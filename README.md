@@ -182,10 +182,33 @@ Credenciais padrão locais: usuário `root`, senha `root`.
 ### 3. Execute
 
 ```bash
-mvn spring-boot:run
+mvn spring-boot:run -Dspring.profiles.active=local
 ```
 
 A aplicação sobe em `http://localhost:8080/api/v1`.
+
+---
+
+## Como Executar os Testes
+
+```bash
+mvn test
+```
+
+> Os testes ainda não estão implementados — ver item no Roadmap. A estrutura `src/test/java/` está reservada para testes futuros de unit e integração.
+
+---
+
+## Troubleshooting
+
+| Sintoma | Causa provável | Solução |
+|---|---|---|
+| `403` no POST do webhook | HMAC inválido | Confirme que `WHATSAPP_APP_SECRET` e `WHATSAPP_VERIFY_TOKEN` estão corretos e que o payload não foi modificado por proxy |
+| Token Hubsoft expira antes de 50 min | Self-invocation do `@Cacheable` | **Nunca** chame `getToken()` dentro de `HubsoftClient`; use apenas via `HubsoftAuthService` injetado |
+| Banco não criado na primeira execução | Falta do parâmetro JDBC | Verifique se `DATASOURCE_URL` contém `createDatabaseIfNotExist=true` |
+| Bot não responde mas webhook recebe | Mensagem duplicada bloqueada | Normal — idempotência via `MessageLog`; verifique se `message_id` já consta na tabela |
+| Transferência não abre conversa no Chatwoot | Fora do horário de atendimento | Verifique os horários configurados em `HorarioAtendimentoService` e o fuso `America/Sao_Paulo` |
+| `application-local.properties` não carregado | Profile não ativo | Execute com `-Dspring.profiles.active=local` |
 
 ---
 
@@ -249,3 +272,73 @@ br.com.sistema.bot
 | CPF/CNPJ em `contextData` da entidade | Dispensa busca no histórico de mensagens; dado disponível imediatamente no handler seguinte |
 | `HubsoftAuthService` separado de `HubsoftClient` | Evita self-invocation do `@Cacheable` (Spring proxy não intercepta chamadas internas) |
 | Chatwoot acionado somente na transferência | Mantém o Chatwoot como ferramenta de atendimento humano, não como orquestrador |
+
+---
+
+## Roadmap de Melhorias (Futuro)
+
+Esta seção consolida melhorias sugeridas para evolução do projeto, priorizando confiabilidade, operação e experiência do time.
+
+### Prioridade Alta
+
+1. **Testes automatizados (unit + integração)**
+      - Criar testes unitários para todos os handlers com Mockito, cobrindo fluxos felizes e de erro.
+      - Criar testes de integração com `@SpringBootTest` e banco H2/Testcontainers para os fluxos completos de webhook.
+      - Configurar JaCoCo com cobertura mínima obrigatória no build (meta inicial: 70%).
+      - Benefício: detecta regressões antes de produção e dá confiança para evoluir o fluxo.
+
+2. **Frontend operacional para o bot (painel visual)**
+      - Criar um frontend (Angular 20) para **visualizar o histórico de mensagens por conversa** e o **estado atual do fluxo**.
+      - Permitir **edição controlada de mensagens de menu/roteiros** (templates), com versionamento e auditoria.
+      - Exibir indicadores operacionais: conversas em atendimento humano, encerradas, em erro e fora de horário.
+      - Benefício: reduz dependência de ajuste direto em código para mudanças simples de texto e melhora a operação diária.
+
+2. **Contrato backend/frontend sempre sincronizado**
+      - Atualizar continuamente o `bot-whatsapp-frontend-context.json` conforme endpoints, DTOs e enums evoluírem.
+      - Incluir validação em CI para detectar divergência entre contrato e implementação.
+      - Benefício: evita quebra de integração no frontend e acelera desenvolvimento em paralelo.
+
+3. **Observabilidade e monitoração**
+      - Publicar métricas com Actuator/Prometheus (latência por handler, taxa de erro por integração, duplicatas bloqueadas por idempotência).
+      - Adicionar correlationId em logs para rastrear ponta a ponta (webhook -> handler -> integrações externas).
+      - Criar dashboards e alertas (ex.: falhas Hubsoft, pico de erros de assinatura, tempo de resposta elevado).
+
+### Prioridade Média
+
+1. **Persistência de histórico conversacional para análise**
+      - Hoje a idempotência persiste `messageId`, mas não o histórico completo do diálogo.
+      - Criar tabela/event store para mensagens recebidas/enviadas (com política de retenção), viabilizando trilha operacional e análises futuras.
+      - Essa base também viabiliza melhor o frontend visual de atendimento.
+
+2. **Resiliência de integrações externas**
+      - Adicionar políticas de retry com backoff, timeout por operação e circuit breaker para Hubsoft/Chatwoot.
+      - Considerar fila assíncrona para operações não críticas e reprocessamento seguro em caso de indisponibilidade.
+
+3. **Qualidade de deploy e ambientes**
+      - Padronizar CI/CD com etapas de build, testes, cobertura e validações de contrato.
+      - Revisar configuração por ambiente para evitar `ddl-auto=update` fora de desenvolvimento, mantendo evolução do schema apenas via Flyway.
+
+4. **Rate limiting e segurança no webhook**
+      - Limitar requisições por IP para evitar abuso do endpoint público `/api/v1/webhook/whatsapp`.
+      - Considerar allowlist de IPs da Meta (faixas publicadas pela Meta) como camada adicional de defesa além do HMAC.
+
+5. **Gestão de templates de mensagem**
+      - Hoje os textos dos menus e respostas estão hardcoded nos handlers.
+      - Externalizar para banco ou arquivo de configuração, permitindo alteração sem redeploy e viabilizando o painel administrativo futuro.
+
+### Prioridade Baixa
+
+1. **Expansão de canais e funcionalidades**
+      - Preparar base para multi-canal (ex.: Webchat) mantendo o core de fluxo desacoplado do provedor.
+      - Evoluir para testes de carga e caos em integrações para validar comportamento em cenários extremos.
+
+2. **Melhorias de produto no atendimento**
+      - Biblioteca de respostas/FAQ administrável no painel.
+      - Relatórios de funil: entrada no menu, abandono por etapa, transferência por motivo e tempo médio por fluxo.
+
+3. **Graceful shutdown**
+      - Garantir que mensagens em processamento sejam concluídas antes do encerramento da JVM, evitando estado inconsistente no `ConversationState`.
+
+4. **ADRs (Architecture Decision Records)**
+      - Registrar formalmente decisões tomadas (ex.: migração de labels Chatwoot → `ConversationState` em banco) em arquivos `docs/adr/`.
+      - Facilita onboarding e justifica escolhas para novos membros do time.
