@@ -1,3 +1,9 @@
+## [1.4.0](https://github.com/CesarAVB/bot-whatsapp-backend/compare/v1.3.0...v1.4.0) (2026-03-20)
+
+### Features
+
+* adicionar configurações para integração com WhatsApp Cloud API e Chatwoot no application-prod.properties ([6bcee07](https://github.com/CesarAVB/bot-whatsapp-backend/commit/6bcee0703ea272654a87af4800442dcbfd527b80))
+
 ## [1.3.0](https://github.com/CesarAVB/bot-whatsapp-backend/compare/v1.2.0...v1.3.0) (2026-03-20)
 
 ### Features
