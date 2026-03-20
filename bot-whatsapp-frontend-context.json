@@ -23,6 +23,18 @@
       ]
     },
     {
+      "nome": "TipoNode",
+      "valores": [
+        "MENU",
+        "AGUARDA_INPUT",
+        "CONFIRMACAO",
+        "TRANSFERENCIA",
+        "RESULTADO_API",
+        "MENSAGEM",
+        "ENCERRAMENTO"
+      ]
+    },
+    {
       "nome": "Direcao",
       "valores": [
         "RECEBIDA",
@@ -98,6 +110,45 @@
         "campos": [
           { "nome": "totalPorEstado", "tipo": "Map<BotState, Long>" },
           { "nome": "totalConversas", "tipo": "long"                }
+        ]
+      },
+      {
+        "nome": "FluxoTemplateResponse",
+        "campos": [
+          { "nome": "chave",    "tipo": "String" },
+          { "nome": "texto",    "tipo": "String" },
+          { "nome": "descricao","tipo": "String" }
+        ]
+      },
+      {
+        "nome": "FluxoNodeResponse",
+        "campos": [
+          { "nome": "id",                  "tipo": "String"                       },
+          { "nome": "label",               "tipo": "String"                       },
+          { "nome": "estado",              "tipo": "String"                       },
+          { "nome": "tipo",                "tipo": "TipoNode"                     },
+          { "nome": "posX",                "tipo": "int"                          },
+          { "nome": "posY",                "tipo": "int"                          },
+          { "nome": "mensagens",           "tipo": "List<FluxoTemplateResponse>"  },
+          { "nome": "equipeTransferencia", "tipo": "String"                       },
+          { "nome": "horarioAtendimento",  "tipo": "String"                       }
+        ]
+      },
+      {
+        "nome": "FluxoArestaResponse",
+        "campos": [
+          { "nome": "id",       "tipo": "String" },
+          { "nome": "de",       "tipo": "String" },
+          { "nome": "para",     "tipo": "String" },
+          { "nome": "condicao", "tipo": "String" },
+          { "nome": "label",    "tipo": "String" }
+        ]
+      },
+      {
+        "nome": "FluxoBotResponse",
+        "campos": [
+          { "nome": "nodes",   "tipo": "List<FluxoNodeResponse>"  },
+          { "nome": "arestas", "tipo": "List<FluxoArestaResponse>"}
         ]
       }
     ]
@@ -193,6 +244,24 @@
           "descricao": "Retorna o log de todas as alterações feitas em um template, em ordem decrescente.",
           "requestDto": null,
           "responseDto": "BotTemplateAuditoriaResponse",
+          "responseStatus": 200,
+          "paginado": false,
+          "autenticacao": false
+        }
+      ]
+    }
+  ,
+    {
+      "tag": "Fluxo",
+      "descricao": "Estrutura visual do fluxo de atendimento do bot (nodes + arestas)",
+      "rotas": [
+        {
+          "metodo": "GET",
+          "path": "/fluxo",
+          "operacao": "Obter fluxo do bot",
+          "descricao": "Retorna o grafo completo do fluxo de atendimento: nós com seus templates resolvidos do BD e arestas com as condições de transição. Usado para renderizar o editor visual estilo Typebot.",
+          "requestDto": null,
+          "responseDto": "FluxoBotResponse",
           "responseStatus": 200,
           "paginado": false,
           "autenticacao": false
