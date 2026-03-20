@@ -9,37 +9,13 @@
 
   "enums": [
     {
-      "nome": "BotState",
-      "valores": [
-        "MENU_INICIAL",
-        "SOU_CLIENTE",
-        "FINANCEIRO",
-        "AGUARDA_CPF_FATURA",
-        "AGUARDA_CPF_DESBLOQUEIO",
-        "CONFIRMA_IDENTIDADE_FATURA",
-        "CONFIRMA_IDENTIDADE_DESBLOQUEIO",
-        "TRANSFERIDO",
-        "ENCERRADO"
-      ]
-    },
-    {
       "nome": "TipoNode",
-      "valores": [
-        "MENU",
-        "AGUARDA_INPUT",
-        "CONFIRMACAO",
-        "TRANSFERENCIA",
-        "RESULTADO_API",
-        "MENSAGEM",
-        "ENCERRAMENTO"
-      ]
+      "descricao": "Tipo comportamental de cada nó no fluxo dinâmico",
+      "valores": ["MENU", "AGUARDA_INPUT", "CONFIRMACAO", "TRANSFERENCIA", "RESULTADO_API", "MENSAGEM", "ENCERRAMENTO"]
     },
     {
       "nome": "Direcao",
-      "valores": [
-        "RECEBIDA",
-        "ENVIADA"
-      ]
+      "valores": ["RECEBIDA", "ENVIADA"]
     }
   ],
 
@@ -47,10 +23,42 @@
     "requests": [
       {
         "nome": "AtualizarTemplateRequest",
-        "descricao": "Payload para atualizar o texto de um template de mensagem",
         "campos": [
           { "nome": "texto",      "tipo": "String", "obrigatorio": true,  "validacoes": ["NotBlank"] },
           { "nome": "alteradoPor","tipo": "String", "obrigatorio": false, "validacoes": ["Size(max=100)"] }
+        ]
+      },
+      {
+        "nome": "AtualizarNodePosicaoRequest",
+        "campos": [
+          { "nome": "posX",  "tipo": "Integer", "obrigatorio": true,  "validacoes": ["NotNull"] },
+          { "nome": "posY",  "tipo": "Integer", "obrigatorio": true,  "validacoes": ["NotNull"] },
+          { "nome": "label", "tipo": "String",  "obrigatorio": false, "validacoes": [] }
+        ]
+      },
+      {
+        "nome": "CriarConexaoRequest",
+        "campos": [
+          { "nome": "deNodeId",  "tipo": "UUID",   "obrigatorio": true, "validacoes": ["NotBlank"] },
+          { "nome": "paraNodeId","tipo": "UUID",   "obrigatorio": true, "validacoes": ["NotBlank"] },
+          { "nome": "condicao",  "tipo": "String", "obrigatorio": true, "validacoes": ["NotBlank"] },
+          { "nome": "label",     "tipo": "String", "obrigatorio": false,"validacoes": [] },
+          { "nome": "ordem",     "tipo": "int",    "obrigatorio": false,"validacoes": [] }
+        ]
+      },
+      {
+        "nome": "AtualizarConexaoRequest",
+        "campos": [
+          { "nome": "condicao", "tipo": "String", "obrigatorio": true, "validacoes": ["NotBlank"] },
+          { "nome": "label",    "tipo": "String", "obrigatorio": false,"validacoes": [] },
+          { "nome": "ordem",    "tipo": "int",    "obrigatorio": false,"validacoes": [] }
+        ]
+      },
+      {
+        "nome": "AdicionarMensagemRequest",
+        "campos": [
+          { "nome": "templateChave", "tipo": "String", "obrigatorio": true, "validacoes": ["NotBlank"] },
+          { "nome": "ordem",         "tipo": "int",    "obrigatorio": false,"validacoes": [] }
         ]
       }
     ],
@@ -69,11 +77,11 @@
       {
         "nome": "BotTemplateAuditoriaResponse",
         "campos": [
-          { "nome": "templateChave",  "tipo": "String"        },
-          { "nome": "textoAnterior",  "tipo": "String"        },
-          { "nome": "textoNovo",      "tipo": "String"        },
-          { "nome": "alteradoPor",    "tipo": "String"        },
-          { "nome": "alteradoEm",     "tipo": "LocalDateTime" }
+          { "nome": "templateChave", "tipo": "String"        },
+          { "nome": "textoAnterior", "tipo": "String"        },
+          { "nome": "textoNovo",     "tipo": "String"        },
+          { "nome": "alteradoPor",   "tipo": "String"        },
+          { "nome": "alteradoEm",    "tipo": "LocalDateTime" }
         ]
       },
       {
@@ -88,7 +96,8 @@
         "nome": "ConversaResumoResponse",
         "campos": [
           { "nome": "whatsappPhone",         "tipo": "String"        },
-          { "nome": "currentState",          "tipo": "BotState"      },
+          { "nome": "currentNodeKey",        "tipo": "String"        },
+          { "nome": "transferidoParaHumano", "tipo": "boolean"       },
           { "nome": "chatwootConversationId","tipo": "Long"          },
           { "nome": "createdAt",             "tipo": "LocalDateTime" },
           { "nome": "updatedAt",             "tipo": "LocalDateTime" }
@@ -97,19 +106,20 @@
       {
         "nome": "ConversaDetalheResponse",
         "campos": [
-          { "nome": "whatsappPhone",         "tipo": "String"                        },
-          { "nome": "currentState",          "tipo": "BotState"                      },
-          { "nome": "chatwootConversationId","tipo": "Long"                          },
-          { "nome": "createdAt",             "tipo": "LocalDateTime"                 },
-          { "nome": "updatedAt",             "tipo": "LocalDateTime"                 },
-          { "nome": "historico",             "tipo": "List<MensagemHistoricoResponse>"}
+          { "nome": "whatsappPhone",         "tipo": "String"                         },
+          { "nome": "currentNodeKey",        "tipo": "String"                         },
+          { "nome": "transferidoParaHumano", "tipo": "boolean"                        },
+          { "nome": "chatwootConversationId","tipo": "Long"                           },
+          { "nome": "createdAt",             "tipo": "LocalDateTime"                  },
+          { "nome": "updatedAt",             "tipo": "LocalDateTime"                  },
+          { "nome": "historico",             "tipo": "List<MensagemHistoricoResponse>" }
         ]
       },
       {
         "nome": "DashboardMetricasResponse",
         "campos": [
-          { "nome": "totalPorEstado", "tipo": "Map<BotState, Long>" },
-          { "nome": "totalConversas", "tipo": "long"                }
+          { "nome": "totalPorEstado", "tipo": "Map<String, Long>", "descricao": "nodeKey → contagem" },
+          { "nome": "totalConversas", "tipo": "long"              }
         ]
       },
       {
@@ -123,15 +133,15 @@
       {
         "nome": "FluxoNodeResponse",
         "campos": [
-          { "nome": "id",                  "tipo": "String"                       },
-          { "nome": "label",               "tipo": "String"                       },
-          { "nome": "estado",              "tipo": "String"                       },
-          { "nome": "tipo",                "tipo": "TipoNode"                     },
-          { "nome": "posX",                "tipo": "int"                          },
-          { "nome": "posY",                "tipo": "int"                          },
-          { "nome": "mensagens",           "tipo": "List<FluxoTemplateResponse>"  },
-          { "nome": "equipeTransferencia", "tipo": "String"                       },
-          { "nome": "horarioAtendimento",  "tipo": "String"                       }
+          { "nome": "id",                  "tipo": "String"                      },
+          { "nome": "label",               "tipo": "String"                      },
+          { "nome": "estado",              "tipo": "String"                      },
+          { "nome": "tipo",                "tipo": "TipoNode"                    },
+          { "nome": "posX",                "tipo": "int"                         },
+          { "nome": "posY",                "tipo": "int"                         },
+          { "nome": "mensagens",           "tipo": "List<FluxoTemplateResponse>" },
+          { "nome": "equipeTransferencia", "tipo": "String"                      },
+          { "nome": "horarioAtendimento",  "tipo": "String"                      }
         ]
       },
       {
@@ -163,7 +173,7 @@
           "metodo": "GET",
           "path": "/dashboard/metricas",
           "operacao": "Buscar métricas operacionais",
-          "descricao": "Retorna a contagem de conversas por BotState e o total de conversas registradas.",
+          "descricao": "Retorna a contagem de conversas por nodeKey e o total de conversas.",
           "requestDto": null,
           "responseDto": "DashboardMetricasResponse",
           "responseStatus": 200,
@@ -180,7 +190,6 @@
           "metodo": "GET",
           "path": "/conversas",
           "operacao": "Listar conversas",
-          "descricao": "Retorna lista paginada de todas as conversas com seu estado atual.",
           "requestDto": null,
           "responseDto": "ConversaResumoResponse",
           "responseStatus": 200,
@@ -191,7 +200,6 @@
           "metodo": "GET",
           "path": "/conversas/{phone}",
           "operacao": "Detalhe da conversa",
-          "descricao": "Retorna o estado atual e o histórico completo de mensagens de uma conversa.",
           "requestDto": null,
           "responseDto": "ConversaDetalheResponse",
           "responseStatus": 200,
@@ -205,66 +213,85 @@
       "descricao": "Gestão dos textos de mensagens do bot com auditoria",
       "rotas": [
         {
-          "metodo": "GET",
-          "path": "/templates",
+          "metodo": "GET",   "path": "/templates",
           "operacao": "Listar todos os templates",
-          "descricao": "Retorna todos os templates de mensagem cadastrados.",
-          "requestDto": null,
-          "responseDto": "BotTemplateResponse",
-          "responseStatus": 200,
-          "paginado": false,
-          "autenticacao": false
+          "requestDto": null, "responseDto": "BotTemplateResponse",
+          "responseStatus": 200, "paginado": false, "autenticacao": false
         },
         {
-          "metodo": "GET",
-          "path": "/templates/{chave}",
+          "metodo": "GET",   "path": "/templates/{chave}",
           "operacao": "Buscar template por chave",
-          "descricao": "Retorna um template específico pela chave (ex: menu.inicial.boas_vindas).",
-          "requestDto": null,
-          "responseDto": "BotTemplateResponse",
-          "responseStatus": 200,
-          "paginado": false,
-          "autenticacao": false
+          "requestDto": null, "responseDto": "BotTemplateResponse",
+          "responseStatus": 200, "paginado": false, "autenticacao": false
         },
         {
-          "metodo": "PUT",
-          "path": "/templates/{chave}",
+          "metodo": "PUT",   "path": "/templates/{chave}",
           "operacao": "Atualizar texto do template",
-          "descricao": "Atualiza o texto de um template e registra a alteração na auditoria.",
-          "requestDto": "AtualizarTemplateRequest",
-          "responseDto": "BotTemplateResponse",
-          "responseStatus": 200,
-          "paginado": false,
-          "autenticacao": false
+          "requestDto": "AtualizarTemplateRequest", "responseDto": "BotTemplateResponse",
+          "responseStatus": 200, "paginado": false, "autenticacao": false
         },
         {
-          "metodo": "GET",
-          "path": "/templates/{chave}/auditoria",
+          "metodo": "GET",   "path": "/templates/{chave}/auditoria",
           "operacao": "Histórico de alterações do template",
-          "descricao": "Retorna o log de todas as alterações feitas em um template, em ordem decrescente.",
-          "requestDto": null,
-          "responseDto": "BotTemplateAuditoriaResponse",
-          "responseStatus": 200,
-          "paginado": false,
-          "autenticacao": false
+          "requestDto": null, "responseDto": "BotTemplateAuditoriaResponse",
+          "responseStatus": 200, "paginado": false, "autenticacao": false
         }
       ]
-    }
-  ,
+    },
     {
       "tag": "Fluxo",
-      "descricao": "Estrutura visual do fluxo de atendimento do bot (nodes + arestas)",
+      "descricao": "Editor visual do fluxo de atendimento — leitura e edição de nós, balões e conexões",
       "rotas": [
         {
-          "metodo": "GET",
-          "path": "/fluxo",
-          "operacao": "Obter fluxo do bot",
-          "descricao": "Retorna o grafo completo do fluxo de atendimento: nós com seus templates resolvidos do BD e arestas com as condições de transição. Usado para renderizar o editor visual estilo Typebot.",
-          "requestDto": null,
-          "responseDto": "FluxoBotResponse",
-          "responseStatus": 200,
-          "paginado": false,
-          "autenticacao": false
+          "metodo": "GET",  "path": "/fluxo",
+          "operacao": "Obter fluxo completo",
+          "descricao": "Retorna todos os nós (com textos resolvidos do BD) e arestas. Base para o editor React Flow.",
+          "requestDto": null, "responseDto": "FluxoBotResponse",
+          "responseStatus": 200, "paginado": false, "autenticacao": false
+        },
+        {
+          "metodo": "PATCH", "path": "/fluxo/nodes/{id}",
+          "operacao": "Atualizar posição e label do nó",
+          "descricao": "Salva a posição (posX/posY) após o usuário arrastar o nó no canvas.",
+          "requestDto": "AtualizarNodePosicaoRequest", "responseDto": null,
+          "responseStatus": 204, "paginado": false, "autenticacao": false
+        },
+        {
+          "metodo": "POST",   "path": "/fluxo/nodes/{nodeId}/mensagens",
+          "operacao": "Adicionar balão ao nó",
+          "requestDto": "AdicionarMensagemRequest", "responseDto": null,
+          "responseStatus": 204, "paginado": false, "autenticacao": false
+        },
+        {
+          "metodo": "PATCH",  "path": "/fluxo/mensagens/{id}/ordem",
+          "operacao": "Reordenar balão dentro do nó",
+          "descricao": "Query param: ?ordem=2",
+          "requestDto": null, "responseDto": null,
+          "responseStatus": 204, "paginado": false, "autenticacao": false
+        },
+        {
+          "metodo": "DELETE", "path": "/fluxo/mensagens/{id}",
+          "operacao": "Remover balão",
+          "requestDto": null, "responseDto": null,
+          "responseStatus": 204, "paginado": false, "autenticacao": false
+        },
+        {
+          "metodo": "POST",   "path": "/fluxo/conexoes",
+          "operacao": "Criar conexão (seta) entre nós",
+          "requestDto": "CriarConexaoRequest", "responseDto": null,
+          "responseStatus": 204, "paginado": false, "autenticacao": false
+        },
+        {
+          "metodo": "PUT",    "path": "/fluxo/conexoes/{id}",
+          "operacao": "Atualizar condição e label de uma seta",
+          "requestDto": "AtualizarConexaoRequest", "responseDto": null,
+          "responseStatus": 204, "paginado": false, "autenticacao": false
+        },
+        {
+          "metodo": "DELETE", "path": "/fluxo/conexoes/{id}",
+          "operacao": "Remover conexão (seta)",
+          "requestDto": null, "responseDto": null,
+          "responseStatus": 204, "paginado": false, "autenticacao": false
         }
       ]
     }

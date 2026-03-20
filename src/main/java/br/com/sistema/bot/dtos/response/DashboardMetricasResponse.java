@@ -1,10 +1,9 @@
 package br.com.sistema.bot.dtos.response;
 
-import br.com.sistema.bot.enums.BotState;
-
 import java.util.Map;
 
 public record DashboardMetricasResponse(
-        Map<BotState, Long> totalPorEstado,
+        /** Contagem de conversas por nodeKey atual (ex: "menu_inicial" → 42). */
+        Map<String, Long> totalPorEstado,
         long totalConversas
 ) {}

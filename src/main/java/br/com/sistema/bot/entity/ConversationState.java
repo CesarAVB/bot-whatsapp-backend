@@ -1,6 +1,5 @@
 package br.com.sistema.bot.entity;
 
-import br.com.sistema.bot.enums.BotState;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -21,15 +20,27 @@ public class ConversationState {
     @Column(name = "whatsapp_phone", nullable = false, unique = true)
     private String whatsappPhone;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "current_state", nullable = false)
-    private BotState currentState;
+    /**
+     * Chave do nó atual no fluxo dinâmico (referência a FluxoNode.nodeKey).
+     * Substitui o enum BotState fixo — permite fluxos configuráveis pelo painel.
+     */
+    @Column(name = "current_node_key", nullable = false, length = 100)
+    @Builder.Default
+    private String currentNodeKey = "menu_inicial";
 
-    // Dados temporários do fluxo atual (ex.: CPF digitado pelo cliente)
+    /**
+     * Flag que indica se o atendimento foi transferido para um humano no Chatwoot.
+     * Enquanto true, o bot ignora todas as mensagens deste número.
+     */
+    @Column(name = "transferido_para_humano", nullable = false)
+    @Builder.Default
+    private boolean transferidoParaHumano = false;
+
+    /** Dados temporários do fluxo atual (ex.: CPF digitado pelo cliente). */
     @Column(name = "context_data", columnDefinition = "TEXT")
     private String contextData;
 
-    // Preenchido quando a conversa é transferida para um humano no Chatwoot
+    /** Preenchido quando a conversa é transferida para um humano no Chatwoot. */
     @Column(name = "chatwoot_conversation_id")
     private Long chatwootConversationId;
 

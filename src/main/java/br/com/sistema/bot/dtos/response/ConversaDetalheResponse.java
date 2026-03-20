@@ -1,14 +1,14 @@
 package br.com.sistema.bot.dtos.response;
 
 import br.com.sistema.bot.entity.ConversationState;
-import br.com.sistema.bot.enums.BotState;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 public record ConversaDetalheResponse(
         String whatsappPhone,
-        BotState currentState,
+        String currentNodeKey,
+        boolean transferidoParaHumano,
         Long chatwootConversationId,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
@@ -17,7 +17,8 @@ public record ConversaDetalheResponse(
     public static ConversaDetalheResponse from(ConversationState s, List<MensagemHistoricoResponse> historico) {
         return new ConversaDetalheResponse(
                 s.getWhatsappPhone(),
-                s.getCurrentState(),
+                s.getCurrentNodeKey(),
+                s.isTransferidoParaHumano(),
                 s.getChatwootConversationId(),
                 s.getCreatedAt(),
                 s.getUpdatedAt(),

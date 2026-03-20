@@ -1,7 +1,6 @@
 package br.com.sistema.bot.service;
 
 import br.com.sistema.bot.entity.ConversationState;
-import br.com.sistema.bot.enums.BotState;
 import br.com.sistema.bot.repository.ConversationStateRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,7 +15,7 @@ public class ConversationStateService {
     private final ConversationStateRepository repository;
 
     // ====================================================
-    // buscarOuCriar - Retorna o estado da conversa ou cria um novo em MENU_INICIAL
+    // buscarOuCriar - Retorna o estado da conversa ou cria um novo em menu_inicial
     // ====================================================
     @Transactional
     public ConversationState buscarOuCriar(String phone) {
@@ -25,35 +24,45 @@ public class ConversationStateService {
                     log.info("Novo contato: {}. Criando estado inicial.", phone);
                     ConversationState state = ConversationState.builder()
                             .whatsappPhone(phone)
-                            .currentState(BotState.MENU_INICIAL)
+                            .currentNodeKey("menu_inicial")
                             .build();
                     return repository.save(state);
                 });
     }
 
     // ====================================================
-    // setState - Transita para novo estado e limpa contextData
+    // setNodeKey - Transita para novo nó e limpa contextData
     // ====================================================
     @Transactional
-    public void setState(String phone, BotState novoEstado) {
+    public void setNodeKey(String phone, String nodeKey) {
         ConversationState state = buscarOuCriar(phone);
-        state.setCurrentState(novoEstado);
+        state.setCurrentNodeKey(nodeKey);
         state.setContextData(null);
         repository.save(state);
-        log.debug("Estado da conversa {} → {}", phone, novoEstado);
+        log.debug("Conversa {} → nó '{}'", phone, nodeKey);
     }
 
     // ====================================================
-    // setStateComContexto - Transita para novo estado e persiste dado temporário
-    // Usado para guardar o CPF/CNPJ entre mensagens sem depender do histórico do Chatwoot
+    // setNodeKeyComContexto - Transita para novo nó e persiste dado temporário
     // ====================================================
     @Transactional
-    public void setStateComContexto(String phone, BotState novoEstado, String contextData) {
+    public void setNodeKeyComContexto(String phone, String nodeKey, String contextData) {
         ConversationState state = buscarOuCriar(phone);
-        state.setCurrentState(novoEstado);
+        state.setCurrentNodeKey(nodeKey);
         state.setContextData(contextData);
         repository.save(state);
-        log.debug("Estado da conversa {} → {} (contextData definido)", phone, novoEstado);
+        log.debug("Conversa {} → nó '{}' (contextData definido)", phone, nodeKey);
+    }
+
+    // ====================================================
+    // marcarTransferido - Bot para de processar mensagens deste número
+    // ====================================================
+    @Transactional
+    public void marcarTransferido(String phone) {
+        ConversationState state = buscarOuCriar(phone);
+        state.setTransferidoParaHumano(true);
+        repository.save(state);
+        log.info("Conversa {} marcada como transferida para humano.", phone);
     }
 
     // ====================================================
@@ -68,14 +77,15 @@ public class ConversationStateService {
     }
 
     // ====================================================
-    // resetar - Volta ao estado inicial (usado após encerramento)
+    // resetar - Volta ao nó inicial (menu_inicial)
     // ====================================================
     @Transactional
     public void resetar(String phone) {
         repository.findByWhatsappPhone(phone).ifPresent(state -> {
-            state.setCurrentState(BotState.MENU_INICIAL);
+            state.setCurrentNodeKey("menu_inicial");
             state.setContextData(null);
             state.setChatwootConversationId(null);
+            state.setTransferidoParaHumano(false);
             repository.save(state);
         });
     }

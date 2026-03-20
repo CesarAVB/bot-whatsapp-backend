@@ -5,16 +5,9 @@ import br.com.sistema.bot.dtos.request.WhatsAppWebhookContact;
 import br.com.sistema.bot.dtos.request.WhatsAppWebhookMessage;
 import br.com.sistema.bot.dtos.request.WhatsAppWebhookRequest;
 import br.com.sistema.bot.dtos.request.WhatsAppWebhookValue;
+import br.com.sistema.bot.engine.FluxoEngine;
+import br.com.sistema.bot.engine.FluxoExecucaoCtx;
 import br.com.sistema.bot.entity.ConversationState;
-import br.com.sistema.bot.enums.BotState;
-import br.com.sistema.bot.handler.ConfirmaCpfHandler;
-import br.com.sistema.bot.handler.EncerrarHandler;
-import br.com.sistema.bot.handler.FinanceiroHandler;
-import br.com.sistema.bot.handler.MenuInicialHandler;
-import br.com.sistema.bot.handler.MessageHandler;
-import br.com.sistema.bot.handler.ProcessaCpfCnpjHandler;
-import br.com.sistema.bot.handler.SouClienteHandler;
-import br.com.sistema.bot.model.ConversationContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -26,12 +19,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class WebhookService {
 
-    private final MenuInicialHandler menuInicialHandler;
-    private final SouClienteHandler souClienteHandler;
-    private final FinanceiroHandler financeiroHandler;
-    private final ProcessaCpfCnpjHandler processaCpfCnpjHandler;
-    private final ConfirmaCpfHandler confirmaCpfHandler;
-    private final EncerrarHandler encerrarHandler;
+    private final FluxoEngine fluxoEngine;
     private final ConversationStateService conversationStateService;
     private final MessageLogService messageLogService;
     private final MensagemHistoricoService mensagemHistoricoService;
@@ -71,8 +59,8 @@ public class WebhookService {
             return;
         }
 
-        String phone = msg.from();
-        String content = msg.text().body();
+        String phone      = msg.from();
+        String content    = msg.text().body();
         String senderName = extrairNome(value.contacts());
 
         mensagemHistoricoService.registrarRecebida(phone, content);
@@ -80,68 +68,29 @@ public class WebhookService {
         ConversationState state = conversationStateService.buscarOuCriar(phone);
 
         // Conversa transferida para humano — bot não interfere
-        if (state.getCurrentState() == BotState.TRANSFERIDO) {
+        if (state.isTransferidoParaHumano()) {
             log.debug("Conversa {} com humano. Bot ignorando mensagem.", phone);
-            messageLogService.registrar(msg.id(), msg.from());
+            messageLogService.registrar(msg.id(), phone);
             return;
         }
 
-        // Estado ENCERRADO reinicia o fluxo como novo contato
-        if (state.getCurrentState() == BotState.ENCERRADO) {
-            conversationStateService.setState(phone, BotState.MENU_INICIAL);
-            state.setCurrentState(BotState.MENU_INICIAL);
-        }
-
-        ConversationContext ctx = new ConversationContext(
+        FluxoExecucaoCtx ctx = new FluxoExecucaoCtx(
                 phone,
                 msg.id(),
                 senderName,
                 content,
-                state.getCurrentState(),
                 state.getContextData()
         );
 
-        log.info("Processando msg {} | {} | estado={} | conteúdo='{}'",
-                msg.id(), phone, ctx.currentState(), content);
-
-        if (rotearEProcessar(ctx)) {
-            messageLogService.registrar(msg.id(), msg.from());
-        }
-    }
-
-    // ====================================================
-    // rotearEProcessar - Comando global + roteamento por estado
-    // ====================================================
-    private boolean rotearEProcessar(ConversationContext ctx) {
-        String content = ctx.content() != null ? ctx.content().trim().toLowerCase() : "";
+        log.info("Processando msg {} | {} | nó='{}' | conteúdo='{}'",
+                msg.id(), phone, state.getCurrentNodeKey(), content);
 
         try {
-            // Comando global: "sair" ou "cancelar" encerra em qualquer estado
-            if ("sair".equals(content) || "cancelar".equals(content)) {
-                encerrarHandler.handle(ctx);
-                return true;
-            }
-
-            MessageHandler handler = selecionarHandler(ctx);
-            handler.handle(ctx);
-            return true;
+            fluxoEngine.processar(ctx);
+            messageLogService.registrar(msg.id(), phone);
         } catch (Exception e) {
-            log.error("Erro ao processar mensagem do cliente {}", ctx.phone(), e);
-            return false;
+            log.error("Erro ao processar mensagem do cliente {}", phone, e);
         }
-    }
-
-    // ====================================================
-    // selecionarHandler - Roteamento por BotState (ordem de prioridade)
-    // ====================================================
-    private MessageHandler selecionarHandler(ConversationContext ctx) {
-        return switch (ctx.currentState()) {
-            case AGUARDA_CPF_FATURA, AGUARDA_CPF_DESBLOQUEIO          -> processaCpfCnpjHandler;
-            case CONFIRMA_IDENTIDADE_FATURA, CONFIRMA_IDENTIDADE_DESBLOQUEIO -> confirmaCpfHandler;
-            case FINANCEIRO                                             -> financeiroHandler;
-            case SOU_CLIENTE                                           -> souClienteHandler;
-            default                                                    -> menuInicialHandler;
-        };
     }
 
     // ====================================================
