@@ -1,0 +1,29 @@
+# Build
+.claude/
+.github/agents/
+target/
+*.class
+*.jar
+*.war
+
+# IDE
+.idea/
+*.iml
+*.iws
+.vscode/
+*.swp
+
+# Logs
+*.log
+logs/
+
+# SO
+.DS_Store
+Thumbs.db
+
+# Ambiente local — NÃO versionar
+application-local.properties
+
+# Manter versionados:
+# application.properties
+# application-prod.properties
