@@ -1,3 +1,9 @@
+## [1.4.1](https://github.com/CesarAVB/bot-whatsapp-backend/compare/v1.4.0...v1.4.1) (2026-03-20)
+
+### Bug Fixes
+
+* Adiciona codificação UTF-8 para arquivos de propriedades do Spring ([2f9cedf](https://github.com/CesarAVB/bot-whatsapp-backend/commit/2f9cedf025b71ff27bb223897f1a3ee003f9611c))
+
 ## [1.4.0](https://github.com/CesarAVB/bot-whatsapp-backend/compare/v1.3.0...v1.4.0) (2026-03-20)
 
 ### Features
