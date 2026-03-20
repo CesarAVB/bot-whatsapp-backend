@@ -26,6 +26,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -141,6 +142,35 @@ class WebhookServiceTest {
 
         verify(conversationStateService).setState("5511666666666", BotState.MENU_INICIAL);
         verify(menuInicialHandler).handle(any());
+    }
+
+    @Test
+    @DisplayName("Deve nao registrar mensagem quando handler falhar")
+    void deveNaoRegistrarMensagemQuandoHandlerFalhar() {
+        when(messageLogService.jaProcessado("wamid.7")).thenReturn(false);
+        when(conversationStateService.buscarOuCriar("5511222222222"))
+                .thenReturn(criarEstado(BotState.FINANCEIRO));
+        doThrow(new RuntimeException("falha")).when(financeiroHandler).handle(any());
+        WhatsAppWebhookRequest payload = criarPayload("wamid.7", "5511222222222", "text", "4", BotState.FINANCEIRO);
+
+        service.processar(payload);
+
+        verify(financeiroHandler).handle(any());
+        verify(messageLogService, never()).registrar("wamid.7", "5511222222222");
+    }
+
+    @Test
+    @DisplayName("Deve registrar mensagem ignorada quando conversa estiver transferida")
+    void deveRegistrarMensagemIgnoradaQuandoConversaEstiverTransferida() {
+        when(messageLogService.jaProcessado("wamid.8")).thenReturn(false);
+        when(conversationStateService.buscarOuCriar("5511333333333"))
+                .thenReturn(criarEstado(BotState.TRANSFERIDO));
+        WhatsAppWebhookRequest payload = criarPayload("wamid.8", "5511333333333", "text", "oi", BotState.TRANSFERIDO);
+
+        service.processar(payload);
+
+        verify(messageLogService).registrar("wamid.8", "5511333333333");
+        verify(menuInicialHandler, never()).handle(any());
     }
 
     private ConversationState criarEstado(BotState estado) {

@@ -69,7 +69,6 @@ public class WebhookService {
             log.info("Mensagem {} já processada, ignorando duplicata", msg.id());
             return;
         }
-        messageLogService.registrar(msg.id(), msg.from());
 
         String phone = msg.from();
         String content = msg.text().body();
@@ -80,6 +79,7 @@ public class WebhookService {
         // Conversa transferida para humano — bot não interfere
         if (state.getCurrentState() == BotState.TRANSFERIDO) {
             log.debug("Conversa {} com humano. Bot ignorando mensagem.", phone);
+            messageLogService.registrar(msg.id(), msg.from());
             return;
         }
 
@@ -101,26 +101,30 @@ public class WebhookService {
         log.info("Processando msg {} | {} | estado={} | conteúdo='{}'",
                 msg.id(), phone, ctx.currentState(), content);
 
-        rotearEProcessar(ctx);
+        if (rotearEProcessar(ctx)) {
+            messageLogService.registrar(msg.id(), msg.from());
+        }
     }
 
     // ====================================================
     // rotearEProcessar - Comando global + roteamento por estado
     // ====================================================
-    private void rotearEProcessar(ConversationContext ctx) {
+    private boolean rotearEProcessar(ConversationContext ctx) {
         String content = ctx.content() != null ? ctx.content().trim().toLowerCase() : "";
 
-        // Comando global: "sair" ou "cancelar" encerra em qualquer estado
-        if ("sair".equals(content) || "cancelar".equals(content)) {
-            encerrarHandler.handle(ctx);
-            return;
-        }
-
-        MessageHandler handler = selecionarHandler(ctx);
         try {
+            // Comando global: "sair" ou "cancelar" encerra em qualquer estado
+            if ("sair".equals(content) || "cancelar".equals(content)) {
+                encerrarHandler.handle(ctx);
+                return true;
+            }
+
+            MessageHandler handler = selecionarHandler(ctx);
             handler.handle(ctx);
+            return true;
         } catch (Exception e) {
             log.error("Erro ao processar mensagem do cliente {}", ctx.phone(), e);
+            return false;
         }
     }
 
