@@ -34,6 +34,7 @@ public class WebhookService {
     private final EncerrarHandler encerrarHandler;
     private final ConversationStateService conversationStateService;
     private final MessageLogService messageLogService;
+    private final MensagemHistoricoService mensagemHistoricoService;
 
     // ====================================================
     // processar - Ponto de entrada: itera entries/changes do payload da WhatsApp Cloud API
@@ -73,6 +74,8 @@ public class WebhookService {
         String phone = msg.from();
         String content = msg.text().body();
         String senderName = extrairNome(value.contacts());
+
+        mensagemHistoricoService.registrarRecebida(phone, content);
 
         ConversationState state = conversationStateService.buscarOuCriar(phone);
 

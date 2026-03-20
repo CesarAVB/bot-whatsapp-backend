@@ -3,12 +3,15 @@ package br.com.sistema.bot.handler;
 import br.com.sistema.bot.dtos.response.HubsoftClienteResponse;
 import br.com.sistema.bot.enums.BotState;
 import br.com.sistema.bot.model.ConversationContext;
+import br.com.sistema.bot.service.BotTemplateService;
 import br.com.sistema.bot.service.ConversationStateService;
 import br.com.sistema.bot.service.HubsoftService;
 import br.com.sistema.bot.service.WhatsAppService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+
+import java.util.Map;
 
 @Slf4j
 @Component
@@ -18,6 +21,7 @@ public class ProcessaCpfCnpjHandler implements MessageHandler {
     private final WhatsAppService whatsAppService;
     private final ConversationStateService conversationStateService;
     private final HubsoftService hubsoftService;
+    private final BotTemplateService templateService;
 
     @Override
     public boolean canHandle(ConversationContext ctx) {
@@ -35,9 +39,7 @@ public class ProcessaCpfCnpjHandler implements MessageHandler {
         // Validação: somente dígitos, 11 (CPF) ou 14 (CNPJ)
         // ====================================================
         if (!isCpfCnpjValido(cpfCnpj)) {
-            whatsAppService.enviarTexto(ctx.phone(),
-                    "CPF/CNPJ inválido. ❌\n\n" +
-                    "Informe apenas números:\n• CPF: 11 dígitos\n• CNPJ: 14 dígitos");
+            whatsAppService.enviarTexto(ctx.phone(), templateService.buscarTexto("cpf.invalido"));
             return;
         }
 
@@ -49,14 +51,12 @@ public class ProcessaCpfCnpjHandler implements MessageHandler {
             resposta = hubsoftService.buscarClientePorCpfCnpj(cpfCnpj);
         } catch (Exception e) {
             log.error("Erro ao buscar cliente no Hubsoft. CPF/CNPJ: {}", cpfCnpj, e);
-            whatsAppService.enviarTexto(ctx.phone(),
-                    "Ocorreu um erro ao consultar o cadastro. Tente novamente em instantes.");
+            whatsAppService.enviarTexto(ctx.phone(), templateService.buscarTexto("cpf.erro_consulta"));
             return;
         }
 
         if (resposta.clientes() == null || resposta.clientes().isEmpty()) {
-            whatsAppService.enviarTexto(ctx.phone(),
-                    "Não encontramos cadastro com esse CPF/CNPJ. ❌\n\nVerifique e tente novamente:");
+            whatsAppService.enviarTexto(ctx.phone(), templateService.buscarTexto("cpf.nao_encontrado"));
             return;
         }
 
@@ -72,8 +72,7 @@ public class ProcessaCpfCnpjHandler implements MessageHandler {
         conversationStateService.setStateComContexto(ctx.phone(), proximoEstado, cpfCnpj);
 
         whatsAppService.enviarTexto(ctx.phone(),
-                "Encontramos o cadastro: *" + nome + "*\n\n" +
-                "Você é o titular desta conta?\n\n1️⃣ Sim\n2️⃣ Não");
+                templateService.buscarTexto("cpf.confirma_titular", Map.of("nome", nome)));
     }
 
     private boolean isCpfCnpjValido(String digits) {

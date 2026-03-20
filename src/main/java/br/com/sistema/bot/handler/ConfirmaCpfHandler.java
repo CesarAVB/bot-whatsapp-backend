@@ -7,12 +7,15 @@ import br.com.sistema.bot.dtos.response.HubsoftFaturaItem;
 import br.com.sistema.bot.dtos.response.HubsoftFaturaResponse;
 import br.com.sistema.bot.enums.BotState;
 import br.com.sistema.bot.model.ConversationContext;
+import br.com.sistema.bot.service.BotTemplateService;
 import br.com.sistema.bot.service.ConversationStateService;
 import br.com.sistema.bot.service.HubsoftService;
 import br.com.sistema.bot.service.WhatsAppService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+
+import java.util.Map;
 
 @Slf4j
 @Component
@@ -22,6 +25,7 @@ public class ConfirmaCpfHandler implements MessageHandler {
     private final WhatsAppService whatsAppService;
     private final ConversationStateService conversationStateService;
     private final HubsoftService hubsoftService;
+    private final BotTemplateService templateService;
 
     @Override
     public boolean canHandle(ConversationContext ctx) {
@@ -44,12 +48,11 @@ public class ConfirmaCpfHandler implements MessageHandler {
             // ====================================================
             case "2" -> {
                 conversationStateService.setState(ctx.phone(), BotState.MENU_INICIAL);
-                whatsAppService.enviarTexto(ctx.phone(),
-                        "Entendido! Verifique seus dados e tente novamente, ou entre em contato com o suporte.");
+                whatsAppService.enviarTexto(ctx.phone(), templateService.buscarTexto("confirma.nao_titular"));
             }
 
             default -> whatsAppService.enviarTexto(ctx.phone(),
-                    "Por favor, responda:\n1️⃣ Sim\n2️⃣ Não");
+                    templateService.buscarTexto("confirma.opcao_invalida"));
         }
     }
 
@@ -62,8 +65,7 @@ public class ConfirmaCpfHandler implements MessageHandler {
         if (cpfCnpj == null || cpfCnpj.isBlank()) {
             log.error("contextData (CPF) ausente para {}", ctx.phone());
             conversationStateService.setState(ctx.phone(), BotState.MENU_INICIAL);
-            whatsAppService.enviarTexto(ctx.phone(),
-                    "Ocorreu um erro. Por favor, inicie o processo novamente.");
+            whatsAppService.enviarTexto(ctx.phone(), templateService.buscarTexto("confirma.erro"));
             return;
         }
 
@@ -85,15 +87,12 @@ public class ConfirmaCpfHandler implements MessageHandler {
             faturas = hubsoftService.buscarFaturas(cpfCnpj);
         } catch (Exception e) {
             log.error("Erro ao buscar faturas. CPF/CNPJ: {}", cpfCnpj, e);
-            whatsAppService.enviarTexto(ctx.phone(),
-                    "Ocorreu um erro ao consultar suas faturas. Tente novamente.");
+            whatsAppService.enviarTexto(ctx.phone(), templateService.buscarTexto("confirma.erro"));
             return;
         }
 
         if (faturas.faturas() == null || faturas.faturas().isEmpty()) {
-            whatsAppService.enviarTexto(ctx.phone(),
-                    "Não encontramos faturas em aberto para o seu cadastro. ✅\n\n" +
-                    "Se precisar de ajuda, é só chamar!");
+            whatsAppService.enviarTexto(ctx.phone(), templateService.buscarTexto("confirma.sem_fatura"));
             return;
         }
 
@@ -108,9 +107,8 @@ public class ConfirmaCpfHandler implements MessageHandler {
             );
         } else {
             whatsAppService.enviarTexto(ctx.phone(),
-                    "📄 *Segunda Via de Boleto*\n\n" +
-                    "Vencimento: " + fatura.dataVencimento() + "\n" +
-                    "Linha digitável:\n`" + fatura.linhaDigitavel() + "`");
+                    templateService.buscarTexto("confirma.fatura",
+                            Map.of("data", fatura.dataVencimento(), "linha", fatura.linhaDigitavel())));
         }
     }
 
@@ -125,21 +123,19 @@ public class ConfirmaCpfHandler implements MessageHandler {
             clienteResponse = hubsoftService.buscarClientePorCpfCnpj(cpfCnpj);
         } catch (Exception e) {
             log.error("Erro ao buscar cliente para desbloqueio. CPF/CNPJ: {}", cpfCnpj, e);
-            whatsAppService.enviarTexto(ctx.phone(),
-                    "Ocorreu um erro ao consultar o cadastro. Tente novamente.");
+            whatsAppService.enviarTexto(ctx.phone(), templateService.buscarTexto("confirma.erro"));
             return;
         }
 
         if (clienteResponse.clientes() == null || clienteResponse.clientes().isEmpty()) {
-            whatsAppService.enviarTexto(ctx.phone(), "Cadastro não encontrado para desbloqueio.");
+            whatsAppService.enviarTexto(ctx.phone(), templateService.buscarTexto("confirma.sem_cadastro_desbloqueio"));
             return;
         }
 
         HubsoftClienteItem cliente = clienteResponse.clientes().get(0);
 
         if (cliente.servicos() == null || cliente.servicos().isEmpty()) {
-            whatsAppService.enviarTexto(ctx.phone(),
-                    "Nenhum serviço ativo encontrado para realizar o desbloqueio.");
+            whatsAppService.enviarTexto(ctx.phone(), templateService.buscarTexto("confirma.sem_servico"));
             return;
         }
 
@@ -150,20 +146,14 @@ public class ConfirmaCpfHandler implements MessageHandler {
             resultado = hubsoftService.desbloquear(idServico);
         } catch (Exception e) {
             log.error("Erro ao desbloquear serviço {}", idServico, e);
-            whatsAppService.enviarTexto(ctx.phone(),
-                    "Ocorreu um erro ao realizar o desbloqueio. Tente novamente.");
+            whatsAppService.enviarTexto(ctx.phone(), templateService.buscarTexto("confirma.erro"));
             return;
         }
 
         if ("success".equalsIgnoreCase(resultado.status())) {
-            whatsAppService.enviarTexto(ctx.phone(),
-                    "✅ *Desbloqueio realizado com sucesso!*\n\n" +
-                    "Sua conexão será restabelecida em breve. 🌐");
+            whatsAppService.enviarTexto(ctx.phone(), templateService.buscarTexto("confirma.desbloqueio_sucesso"));
         } else {
-            whatsAppService.enviarTexto(ctx.phone(),
-                    "❌ Não foi possível realizar o desbloqueio.\n\n" +
-                    "Isso pode ocorrer se já houve um desbloqueio recente (limite: 1x a cada 25 dias).\n\n" +
-                    "Se precisar de ajuda, entre em contato com nosso suporte técnico.");
+            whatsAppService.enviarTexto(ctx.phone(), templateService.buscarTexto("confirma.desbloqueio_falha"));
         }
     }
 }

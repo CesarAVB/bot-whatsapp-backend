@@ -2,34 +2,31 @@
   "projeto": {
     "nome": "bot-whatsapp",
     "pacote": "br.com.sistema.bot",
-    "descricao": "Backend orquestrador do bot de atendimento WhatsApp da ASB Telecom",
+    "descricao": "Painel administrativo do bot de atendimento WhatsApp da ASB Telecom",
     "apiBaseUrl": "/api/v1",
     "contextPath": "/api/v1"
   },
 
   "enums": [
     {
-      "nome": "ConversationLabel",
+      "nome": "BotState",
       "valores": [
-        "SELECT_MENU_INICIAL",
-        "SELECT_SOU_CLIENTE",
-        "SELECT_FINANCEIRO",
-        "SELECT_SUPORTE",
-        "SELECT_DUVIDAS",
-        "SELECT_CANCELAMENTO",
-        "INPUT_CPF_CNPJ",
-        "CONFIRMA_CPF",
-        "FATURA",
-        "DESBLOQUEIO"
+        "MENU_INICIAL",
+        "SOU_CLIENTE",
+        "FINANCEIRO",
+        "AGUARDA_CPF_FATURA",
+        "AGUARDA_CPF_DESBLOQUEIO",
+        "CONFIRMA_IDENTIDADE_FATURA",
+        "CONFIRMA_IDENTIDADE_DESBLOQUEIO",
+        "TRANSFERIDO",
+        "ENCERRADO"
       ]
     },
     {
-      "nome": "TeamId",
+      "nome": "Direcao",
       "valores": [
-        "FINANCEIRO",
-        "SUPORTE",
-        "DUVIDAS_COMERCIAL",
-        "CANCELAMENTO"
+        "RECEBIDA",
+        "ENVIADA"
       ]
     }
   ],
@@ -37,103 +34,70 @@
   "dtos": {
     "requests": [
       {
-        "nome": "ChatwootWebhookRequest",
-        "descricao": "Payload principal do webhook enviado pelo Chatwoot",
+        "nome": "AtualizarTemplateRequest",
+        "descricao": "Payload para atualizar o texto de um template de mensagem",
         "campos": [
-          { "nome": "event",    "tipo": "String",  "obrigatorio": false, "validacoes": [] },
-          { "nome": "id",       "tipo": "Long",    "obrigatorio": false, "validacoes": [] },
-          { "nome": "inboxId",  "tipo": "Integer", "obrigatorio": false, "validacoes": [] },
-          { "nome": "labels",   "tipo": "List<String>", "obrigatorio": false, "validacoes": [] },
-          { "nome": "messages", "tipo": "List<ChatwootMessageRequest>", "obrigatorio": false, "validacoes": [] },
-          { "nome": "meta",     "tipo": "ChatwootMetaRequest", "obrigatorio": false, "validacoes": [] }
-        ]
-      },
-      {
-        "nome": "ChatwootMessageRequest",
-        "descricao": "Mensagem individual dentro do webhook do Chatwoot",
-        "campos": [
-          { "nome": "id",          "tipo": "Long",    "obrigatorio": false, "validacoes": [] },
-          { "nome": "content",     "tipo": "String",  "obrigatorio": false, "validacoes": [] },
-          { "nome": "messageType", "tipo": "Integer", "obrigatorio": false, "validacoes": [] },
-          { "nome": "contentType", "tipo": "String",  "obrigatorio": false, "validacoes": [] },
-          { "nome": "sender",      "tipo": "ChatwootSenderRequest", "obrigatorio": false, "validacoes": [] }
-        ]
-      },
-      {
-        "nome": "ChatwootSenderRequest",
-        "descricao": "Dados do remetente da mensagem",
-        "campos": [
-          { "nome": "name",        "tipo": "String", "obrigatorio": false, "validacoes": [] },
-          { "nome": "phoneNumber", "tipo": "String", "obrigatorio": false, "validacoes": [] },
-          { "nome": "identifier",  "tipo": "String", "obrigatorio": false, "validacoes": [] }
-        ]
-      },
-      {
-        "nome": "ChatwootMetaRequest",
-        "descricao": "Metadados da conversa (assignee = null indica sem atendente humano)",
-        "campos": [
-          { "nome": "assignee", "tipo": "Object", "obrigatorio": false, "validacoes": [] }
+          { "nome": "texto",      "tipo": "String", "obrigatorio": true,  "validacoes": ["NotBlank"] },
+          { "nome": "alteradoPor","tipo": "String", "obrigatorio": false, "validacoes": ["Size(max=100)"] }
         ]
       }
     ],
     "responses": [
       {
-        "nome": "HubsoftTokenResponse",
+        "nome": "BotTemplateResponse",
         "campos": [
-          { "nome": "accessToken", "tipo": "String"  },
-          { "nome": "expiresIn",   "tipo": "Integer" },
-          { "nome": "tokenType",   "tipo": "String"  }
+          { "nome": "chave",     "tipo": "String"        },
+          { "nome": "texto",     "tipo": "String"        },
+          { "nome": "descricao", "tipo": "String"        },
+          { "nome": "ativo",     "tipo": "boolean"       },
+          { "nome": "createdAt", "tipo": "LocalDateTime" },
+          { "nome": "updatedAt", "tipo": "LocalDateTime" }
         ]
       },
       {
-        "nome": "HubsoftClienteResponse",
+        "nome": "BotTemplateAuditoriaResponse",
         "campos": [
-          { "nome": "clientes", "tipo": "List<HubsoftClienteItem>" }
+          { "nome": "templateChave",  "tipo": "String"        },
+          { "nome": "textoAnterior",  "tipo": "String"        },
+          { "nome": "textoNovo",      "tipo": "String"        },
+          { "nome": "alteradoPor",    "tipo": "String"        },
+          { "nome": "alteradoEm",     "tipo": "LocalDateTime" }
         ]
       },
       {
-        "nome": "HubsoftClienteItem",
+        "nome": "MensagemHistoricoResponse",
         "campos": [
-          { "nome": "nomeRazaosocial", "tipo": "String" },
-          { "nome": "cpfCnpj",        "tipo": "String" },
-          { "nome": "servicos",        "tipo": "List<HubsoftServicoItem>" }
+          { "nome": "direcao",   "tipo": "Direcao"       },
+          { "nome": "conteudo",  "tipo": "String"        },
+          { "nome": "createdAt", "tipo": "LocalDateTime" }
         ]
       },
       {
-        "nome": "HubsoftServicoItem",
+        "nome": "ConversaResumoResponse",
         "campos": [
-          { "nome": "id",        "tipo": "Long"   },
-          { "nome": "descricao", "tipo": "String" },
-          { "nome": "status",    "tipo": "String" },
-          { "nome": "idCliente", "tipo": "Long"   }
+          { "nome": "whatsappPhone",         "tipo": "String"        },
+          { "nome": "currentState",          "tipo": "BotState"      },
+          { "nome": "chatwootConversationId","tipo": "Long"          },
+          { "nome": "createdAt",             "tipo": "LocalDateTime" },
+          { "nome": "updatedAt",             "tipo": "LocalDateTime" }
         ]
       },
       {
-        "nome": "HubsoftFaturaResponse",
+        "nome": "ConversaDetalheResponse",
         "campos": [
-          { "nome": "faturas", "tipo": "List<HubsoftFaturaItem>" }
+          { "nome": "whatsappPhone",         "tipo": "String"                        },
+          { "nome": "currentState",          "tipo": "BotState"                      },
+          { "nome": "chatwootConversationId","tipo": "Long"                          },
+          { "nome": "createdAt",             "tipo": "LocalDateTime"                 },
+          { "nome": "updatedAt",             "tipo": "LocalDateTime"                 },
+          { "nome": "historico",             "tipo": "List<MensagemHistoricoResponse>"}
         ]
       },
       {
-        "nome": "HubsoftFaturaItem",
+        "nome": "DashboardMetricasResponse",
         "campos": [
-          { "nome": "dataVencimento", "tipo": "String" },
-          { "nome": "linhaDigitavel", "tipo": "String" },
-          { "nome": "link",           "tipo": "String" },
-          { "nome": "detalhamento",   "tipo": "String" }
-        ]
-      },
-      {
-        "nome": "HubsoftDesbloqueioResponse",
-        "campos": [
-          { "nome": "status",  "tipo": "String" },
-          { "nome": "message", "tipo": "String" }
-        ]
-      },
-      {
-        "nome": "ChatwootMessagesResponse",
-        "campos": [
-          { "nome": "payload", "tipo": "List<ChatwootMessageRequest>" }
+          { "nome": "totalPorEstado", "tipo": "Map<BotState, Long>" },
+          { "nome": "totalConversas", "tipo": "long"                }
         ]
       }
     ]
@@ -141,18 +105,97 @@
 
   "endpoints": [
     {
-      "tag": "Webhook",
-      "descricao": "Recebimento de eventos do Chatwoot para processamento do bot de atendimento",
+      "tag": "Dashboard",
+      "descricao": "Indicadores operacionais do bot",
       "rotas": [
         {
-          "metodo": "POST",
-          "path": "/webhook/chatwoot",
-          "operacao": "Receber evento do Chatwoot",
-          "descricao": "Valida assinatura HMAC-SHA256 (header x-hub-signature-256) e delega ao WebhookService. Filtra apenas mensagens recebidas (message_type=0) sem atendente humano (assignee=null).",
-          "requestDto": "ChatwootWebhookRequest",
-          "responseDto": null,
+          "metodo": "GET",
+          "path": "/dashboard/metricas",
+          "operacao": "Buscar métricas operacionais",
+          "descricao": "Retorna a contagem de conversas por BotState e o total de conversas registradas.",
+          "requestDto": null,
+          "responseDto": "DashboardMetricasResponse",
           "responseStatus": 200,
-          "autenticacao": true
+          "paginado": false,
+          "autenticacao": false
+        }
+      ]
+    },
+    {
+      "tag": "Conversas",
+      "descricao": "Gestão e visualização das conversas ativas",
+      "rotas": [
+        {
+          "metodo": "GET",
+          "path": "/conversas",
+          "operacao": "Listar conversas",
+          "descricao": "Retorna lista paginada de todas as conversas com seu estado atual.",
+          "requestDto": null,
+          "responseDto": "ConversaResumoResponse",
+          "responseStatus": 200,
+          "paginado": true,
+          "autenticacao": false
+        },
+        {
+          "metodo": "GET",
+          "path": "/conversas/{phone}",
+          "operacao": "Detalhe da conversa",
+          "descricao": "Retorna o estado atual e o histórico completo de mensagens de uma conversa.",
+          "requestDto": null,
+          "responseDto": "ConversaDetalheResponse",
+          "responseStatus": 200,
+          "paginado": false,
+          "autenticacao": false
+        }
+      ]
+    },
+    {
+      "tag": "Templates",
+      "descricao": "Gestão dos textos de mensagens do bot com auditoria",
+      "rotas": [
+        {
+          "metodo": "GET",
+          "path": "/templates",
+          "operacao": "Listar todos os templates",
+          "descricao": "Retorna todos os templates de mensagem cadastrados.",
+          "requestDto": null,
+          "responseDto": "BotTemplateResponse",
+          "responseStatus": 200,
+          "paginado": false,
+          "autenticacao": false
+        },
+        {
+          "metodo": "GET",
+          "path": "/templates/{chave}",
+          "operacao": "Buscar template por chave",
+          "descricao": "Retorna um template específico pela chave (ex: menu.inicial.boas_vindas).",
+          "requestDto": null,
+          "responseDto": "BotTemplateResponse",
+          "responseStatus": 200,
+          "paginado": false,
+          "autenticacao": false
+        },
+        {
+          "metodo": "PUT",
+          "path": "/templates/{chave}",
+          "operacao": "Atualizar texto do template",
+          "descricao": "Atualiza o texto de um template e registra a alteração na auditoria.",
+          "requestDto": "AtualizarTemplateRequest",
+          "responseDto": "BotTemplateResponse",
+          "responseStatus": 200,
+          "paginado": false,
+          "autenticacao": false
+        },
+        {
+          "metodo": "GET",
+          "path": "/templates/{chave}/auditoria",
+          "operacao": "Histórico de alterações do template",
+          "descricao": "Retorna o log de todas as alterações feitas em um template, em ordem decrescente.",
+          "requestDto": null,
+          "responseDto": "BotTemplateAuditoriaResponse",
+          "responseStatus": 200,
+          "paginado": false,
+          "autenticacao": false
         }
       ]
     }

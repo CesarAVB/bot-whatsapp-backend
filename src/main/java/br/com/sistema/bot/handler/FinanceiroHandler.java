@@ -3,6 +3,7 @@ package br.com.sistema.bot.handler;
 import br.com.sistema.bot.enums.BotState;
 import br.com.sistema.bot.enums.TeamId;
 import br.com.sistema.bot.model.ConversationContext;
+import br.com.sistema.bot.service.BotTemplateService;
 import br.com.sistema.bot.service.ChatwootService;
 import br.com.sistema.bot.service.ConversationStateService;
 import br.com.sistema.bot.service.HorarioAtendimentoService;
@@ -21,6 +22,7 @@ public class FinanceiroHandler implements MessageHandler {
     private final ChatwootService chatwootService;
     private final HorarioAtendimentoService horarioAtendimentoService;
     private final EncerrarHandler encerrarHandler;
+    private final BotTemplateService templateService;
 
     @Override
     public boolean canHandle(ConversationContext ctx) {
@@ -37,8 +39,7 @@ public class FinanceiroHandler implements MessageHandler {
             // ====================================================
             case "1" -> {
                 conversationStateService.setState(ctx.phone(), BotState.AGUARDA_CPF_FATURA);
-                whatsAppService.enviarTexto(ctx.phone(),
-                        "Por favor, informe seu *CPF* ou *CNPJ* (somente números):");
+                whatsAppService.enviarTexto(ctx.phone(), templateService.buscarTexto("financeiro.solicitar_cpf"));
             }
 
             // ====================================================
@@ -46,16 +47,14 @@ public class FinanceiroHandler implements MessageHandler {
             // ====================================================
             case "2" -> {
                 conversationStateService.setState(ctx.phone(), BotState.AGUARDA_CPF_DESBLOQUEIO);
-                whatsAppService.enviarTexto(ctx.phone(),
-                        "Por favor, informe seu *CPF* ou *CNPJ* (somente números):");
+                whatsAppService.enviarTexto(ctx.phone(), templateService.buscarTexto("financeiro.solicitar_cpf"));
             }
 
             // ====================================================
             // Opção 3 — Comprovante: instrução para anexar imagem/PDF
             // ====================================================
             case "3" -> whatsAppService.enviarTexto(ctx.phone(),
-                    "Para enviar seu comprovante, basta *anexar a imagem ou PDF* nesta conversa.\n\n" +
-                    "Nossa equipe irá verificar e dar retorno em breve. ✅");
+                    templateService.buscarTexto("financeiro.comprovante"));
 
             // ====================================================
             // Opção 4 — Falar com atendente financeiro
@@ -69,12 +68,9 @@ public class FinanceiroHandler implements MessageHandler {
                     );
                     conversationStateService.setState(ctx.phone(), BotState.TRANSFERIDO);
                     if (chatwootId > 0) conversationStateService.setChatwootConversationId(ctx.phone(), chatwootId);
-                    whatsAppService.enviarTexto(ctx.phone(),
-                            "Transferindo para a equipe *Financeira*. Em breve um atendente irá lhe atender! 😊");
+                    whatsAppService.enviarTexto(ctx.phone(), templateService.buscarTexto("financeiro.transfer"));
                 } else {
-                    whatsAppService.enviarTexto(ctx.phone(),
-                            "Nossa equipe financeira atende *segunda a sábado, das 09h às 18h*.\n" +
-                            "No momento estamos fora do horário. Por favor, retorne dentro do horário. 🙏");
+                    whatsAppService.enviarTexto(ctx.phone(), templateService.buscarTexto("financeiro.fora_horario"));
                     conversationStateService.setState(ctx.phone(), BotState.MENU_INICIAL);
                 }
             }
@@ -85,7 +81,7 @@ public class FinanceiroHandler implements MessageHandler {
             case "5" -> encerrarHandler.handle(ctx);
 
             default -> whatsAppService.enviarTexto(ctx.phone(),
-                    "Opção inválida. Por favor, escolha entre 1 e 5:");
+                    templateService.buscarTexto("financeiro.opcao_invalida"));
         }
     }
 }
