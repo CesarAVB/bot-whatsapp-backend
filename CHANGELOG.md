@@ -1,3 +1,9 @@
+## [1.6.0](https://github.com/CesarAVB/bot-whatsapp-backend/compare/v1.5.0...v1.6.0) (2026-03-20)
+
+### Features
+
+* implementar estrutura de fluxo dinâmico com entidades, repositórios e executores ([4d6eeae](https://github.com/CesarAVB/bot-whatsapp-backend/commit/4d6eeae69ed7bc262c80786c509a2335081141f4))
+
 ## [1.5.0](https://github.com/CesarAVB/bot-whatsapp-backend/compare/v1.4.1...v1.5.0) (2026-03-20)
 
 ### Features
