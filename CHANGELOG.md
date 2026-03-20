@@ -1,3 +1,9 @@
+## [1.7.0](https://github.com/CesarAVB/bot-whatsapp-backend/compare/v1.6.0...v1.7.0) (2026-03-20)
+
+### Features
+
+* adicionar parâmetro FluxoEngine nos executores de nó para evitar dependência circular ([415d648](https://github.com/CesarAVB/bot-whatsapp-backend/commit/415d64800777508a7ff4ff0b1f44cfdfc2132b86))
+
 ## [1.6.0](https://github.com/CesarAVB/bot-whatsapp-backend/compare/v1.5.0...v1.6.0) (2026-03-20)
 
 ### Features
