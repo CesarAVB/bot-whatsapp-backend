@@ -12,28 +12,28 @@ Cliente (WhatsApp)
         │
         ▼
 WhatsApp Cloud API  ──────────────────────────────────────────────────────────┐
-        │ POST /api/v1/webhook/whatsapp                                        │
-        ▼                                                                      │
-WebhookController                                                              │
+        │ POST /api/v1/webhook/whatsapp                                       │
+        ▼                                                                     │
+WebhookController                                                             │
   └─ Valida assinatura HMAC-SHA256 (X-Hub-Signature-256)                      │
-        │                                                                      │
-        ▼                                                                      │
-WebhookService                                                                 │
+        │                                                                     │
+        ▼                                                                     │
+WebhookService                                                                │
   └─ Filtros (somente texto) + Idempotência (MessageLog)                      │
-  └─ Carrega ConversationState do banco                                        │
+  └─ Carrega ConversationState do banco                                       │
   └─ Roteia para o Handler correto pelo BotState                              │
-        │                                                                      │
-        ├──► MenuInicialHandler                                                │
-        ├──► SouClienteHandler                                                 │
-        ├──► FinanceiroHandler                                                 │
+        │                                                                     │
+        ├──► MenuInicialHandler                                               │
+        ├──► SouClienteHandler                                                │
+        ├──► FinanceiroHandler                                                │
         ├──► ProcessaCpfCnpjHandler ──► Hubsoft API                           │
         ├──► ConfirmaCpfHandler     ──► Hubsoft API (fatura / desbloqueio)    │
-        └──► EncerrarHandler                                                   │
-                │                                                              │
-                ▼ (apenas na transferência)                                    │
+        └──► EncerrarHandler                                                  │
+                │                                                             │
+                ▼ (apenas na transferência)                                   │
           ChatwootService ──► Chatwoot API (cria conversa + atribui equipe)   │
-                │                                                              │
-                └──────────────────────────────────────────────────────────────┘
+                │                                                             │
+                └─────────────────────────────────────────────────────────────┘
                       WhatsAppService ──► WhatsApp Cloud API (envia resposta)
 ```
 
