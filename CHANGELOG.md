@@ -1,3 +1,9 @@
+## [1.1.1](https://github.com/CesarAVB/bot-whatsapp-backend/compare/v1.1.0...v1.1.1) (2026-03-20)
+
+### Bug Fixes
+
+* corrigir propriedade de configuração para aceitação de enums sem ([228259c](https://github.com/CesarAVB/bot-whatsapp-backend/commit/228259ca4c2efe595e7c2dababc4be6c7cae712f))
+
 ## [1.1.0](https://github.com/CesarAVB/bot-whatsapp-backend/compare/v1.0.0...v1.1.0) (2026-03-20)
 
 ### Features
