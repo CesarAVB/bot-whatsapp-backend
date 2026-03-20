@@ -1,3 +1,9 @@
+## [1.3.0](https://github.com/CesarAVB/bot-whatsapp-backend/compare/v1.2.0...v1.3.0) (2026-03-20)
+
+### Features
+
+* implementar serviço de templates para mensagens do bot ([ab28ba5](https://github.com/CesarAVB/bot-whatsapp-backend/commit/ab28ba5215235bd93ba92728734dbf659c84a4d8))
+
 ## [1.2.0](https://github.com/CesarAVB/bot-whatsapp-backend/compare/v1.1.1...v1.2.0) (2026-03-20)
 
 ### Features
