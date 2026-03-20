@@ -1,3 +1,9 @@
+## [1.5.0](https://github.com/CesarAVB/bot-whatsapp-backend/compare/v1.4.1...v1.5.0) (2026-03-20)
+
+### Features
+
+* adiciona estrutura de fluxo de atendimento com nós e arestas no bot ([d10f044](https://github.com/CesarAVB/bot-whatsapp-backend/commit/d10f044d98c708c9a26665f7e5b4ce4b56f6f1cd))
+
 ## [1.4.1](https://github.com/CesarAVB/bot-whatsapp-backend/compare/v1.4.0...v1.4.1) (2026-03-20)
 
 ### Bug Fixes
