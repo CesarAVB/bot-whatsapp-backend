@@ -1,3 +1,9 @@
+## [1.2.0](https://github.com/CesarAVB/bot-whatsapp-backend/compare/v1.1.1...v1.2.0) (2026-03-20)
+
+### Features
+
+* atualizar configuração do projeto e adicionar documentação do fluxo do bot ([ae976b1](https://github.com/CesarAVB/bot-whatsapp-backend/commit/ae976b1fa3e187c5a9ef27e9fe9e7b6f08fe2b5f))
+
 ## [1.1.1](https://github.com/CesarAVB/bot-whatsapp-backend/compare/v1.1.0...v1.1.1) (2026-03-20)
 
 ### Bug Fixes
